@@ -139,6 +139,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+      <Text style={styles.sofiLogo}>SoFi</Text>
       <Text style={styles.title}>Clock Out Calculator</Text>
 
       <View style={styles.card}>
@@ -209,7 +210,7 @@ export default function App() {
         <View
           style={[
             styles.dot,
-            { backgroundColor: notificationsSet ? "#4CAF50" : "#666" },
+            { backgroundColor: notificationsSet ? "#00C853" : "#5A6475" },
           ]}
         />
         <Text style={styles.notifText}>
@@ -227,21 +228,32 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a2e",
+    backgroundColor: "#0B1121",
     paddingTop: 80,
     paddingHorizontal: 20,
   },
+  sofiLogo: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#E5004C",
+    textAlign: "center",
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#fff",
+    fontSize: 26,
+    fontWeight: "300",
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 30,
+    letterSpacing: 0.5,
   },
   card: {
-    backgroundColor: "#16213e",
-    borderRadius: 16,
+    backgroundColor: "#151E30",
+    borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: "#1E2A40",
   },
   row: {
     flexDirection: "row",
@@ -250,10 +262,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   label: {
-    fontSize: 16,
-    color: "#a0a0b0",
-    fontWeight: "600",
+    fontSize: 15,
+    color: "#8B95A5",
+    fontWeight: "500",
     width: 90,
+    letterSpacing: 0.3,
   },
   picker: {
     flex: 1,
@@ -261,35 +274,39 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#2a2a4a",
+    backgroundColor: "#1E2A40",
     marginVertical: 4,
   },
   resultCard: {
-    backgroundColor: "#0f3460",
-    borderRadius: 16,
+    backgroundColor: "#151E30",
+    borderRadius: 12,
     padding: 24,
     marginTop: 24,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5004C",
   },
   resultLabel: {
-    fontSize: 14,
-    color: "#a0a0b0",
+    fontSize: 13,
+    color: "#8B95A5",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    fontWeight: "500",
   },
   resultTime: {
     fontSize: 48,
     fontWeight: "700",
-    color: "#e94560",
+    color: "#E5004C",
     marginVertical: 8,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#a0a0b0",
+    fontSize: 13,
+    color: "#8B95A5",
+    letterSpacing: 0.3,
   },
   errorText: {
     fontSize: 16,
-    color: "#e94560",
+    color: "#E5004C",
   },
   notifStatus: {
     flexDirection: "row",
@@ -305,6 +322,6 @@ const styles = StyleSheet.create({
   },
   notifText: {
     fontSize: 13,
-    color: "#666",
+    color: "#5A6475",
   },
 });
