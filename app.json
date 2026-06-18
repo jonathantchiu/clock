@@ -9,10 +9,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "timekeep",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.timekeep"]
+      },
       "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification"
-        ],
+        "UIBackgroundModes": ["remote-notification"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -32,7 +33,13 @@
           "sounds": []
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "@bacons/apple-targets",
+        {
+          "appleTeamId": "Q66QCPYGDW"
+        }
+      ]
     ],
     "extra": {
       "eas": {

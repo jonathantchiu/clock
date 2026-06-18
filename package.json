@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@bacons/apple-targets": "^4.0.7",
     "@react-native-community/datetimepicker": "8.4.4",
     "expo": "~54.0.0",
     "expo-asset": "~12.0.13",

@@ -14,6 +14,22 @@ import DateTimePicker, {
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 
+let ExtensionStorage: any = null;
+try {
+  ExtensionStorage = require("@bacons/apple-targets").ExtensionStorage;
+} catch {}
+
+function updateWidget(clockOut: Date | null, lunchMinutes: number | null) {
+  if (!ExtensionStorage) return;
+  try {
+    const storage = new ExtensionStorage("group.timekeep");
+    storage.set("clockOutTime", clockOut ? fmt(clockOut) : "--:-- --");
+    storage.set("clockOutTimestamp", clockOut ? clockOut.getTime() : 0);
+    storage.set("lunchMinutes", lunchMinutes !== null ? String(lunchMinutes) : "--");
+    ExtensionStorage.reloadWidget();
+  } catch {}
+}
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -146,6 +162,10 @@ export default function App() {
     } else {
       setNotificationsSet(false);
     }
+    updateWidget(
+      clockOut && !hasError ? clockOut : null,
+      !hasError ? lunchMinutes : null
+    );
   }, [times.clockIn, times.lunchOut, times.lunchIn, hasPermission]);
 
   function openPicker(slot: TimeSlot) {
