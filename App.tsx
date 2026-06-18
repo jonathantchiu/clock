@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
-  Platform,
+  Modal,
+  Pressable,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   Alert,
 } from "react-native";
 import DateTimePicker, {
@@ -24,11 +24,17 @@ Notifications.setNotificationHandler({
   }),
 });
 
-function toTimeDate(hours: number, minutes: number): Date {
-  const d = new Date();
-  d.setHours(hours, minutes, 0, 0);
-  return d;
-}
+const SOFI = {
+  bg: "#0B1121",
+  card: "#151E30",
+  cardBorder: "#1E2A40",
+  blue: "#00A2C7",
+  magenta: "#E5004C",
+  white: "#FFFFFF",
+  textMuted: "#8B95A5",
+  textDim: "#5A6475",
+  shadow: "#061020",
+};
 
 function fmt(date: Date): string {
   let h = date.getHours();
@@ -49,8 +55,7 @@ function calcClockOut(
 ): Date | null {
   const lunchMinutes = diffMinutes(lunchOut, lunchIn);
   if (lunchMinutes < 0) return null;
-  const clockOut = new Date(clockIn.getTime() + (480 + lunchMinutes) * 60000);
-  return clockOut;
+  return new Date(clockIn.getTime() + (480 + lunchMinutes) * 60000);
 }
 
 async function registerForNotifications() {
@@ -69,7 +74,6 @@ async function registerForNotifications() {
 
 async function scheduleClockOutNotifications(clockOut: Date) {
   await Notifications.cancelAllScheduledNotificationsAsync();
-
   const now = new Date();
   const fiveMinBefore = new Date(clockOut.getTime() - 5 * 60000);
 
@@ -102,115 +106,126 @@ async function scheduleClockOutNotifications(clockOut: Date) {
   }
 }
 
+type TimeSlot = "clockIn" | "lunchOut" | "lunchIn";
+
+const LABELS: Record<TimeSlot, string> = {
+  clockIn: "Clock In",
+  lunchOut: "Lunch Out",
+  lunchIn: "Lunch In",
+};
+
 export default function App() {
-  const [clockIn, setClockIn] = useState(() => toTimeDate(8, 0));
-  const [lunchOut, setLunchOut] = useState(() => toTimeDate(12, 0));
-  const [lunchIn, setLunchIn] = useState(() => toTimeDate(12, 30));
+  const [times, setTimes] = useState<Record<TimeSlot, Date | null>>({
+    clockIn: null,
+    lunchOut: null,
+    lunchIn: null,
+  });
+  const [activeSlot, setActiveSlot] = useState<TimeSlot | null>(null);
+  const [pickerValue, setPickerValue] = useState(new Date());
   const [notificationsSet, setNotificationsSet] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
 
-  const clockOut = calcClockOut(clockIn, lunchOut, lunchIn);
-  const lunchMinutes = diffMinutes(lunchOut, lunchIn);
+  const allSet = times.clockIn && times.lunchOut && times.lunchIn;
+  const clockOut =
+    allSet ? calcClockOut(times.clockIn!, times.lunchOut!, times.lunchIn!) : null;
+  const lunchMinutes =
+    times.lunchOut && times.lunchIn
+      ? diffMinutes(times.lunchOut, times.lunchIn)
+      : null;
+  const hasError = lunchMinutes !== null && lunchMinutes < 0;
 
   useEffect(() => {
     registerForNotifications().then(setHasPermission);
   }, []);
 
   useEffect(() => {
-    if (clockOut && hasPermission) {
+    if (clockOut && !hasError && hasPermission) {
       scheduleClockOutNotifications(clockOut).then(() =>
         setNotificationsSet(true)
       );
     } else {
       setNotificationsSet(false);
     }
-  }, [clockIn, lunchOut, lunchIn, hasPermission]);
+  }, [times.clockIn, times.lunchOut, times.lunchIn, hasPermission]);
 
-  const onChangeClockIn = (_: DateTimePickerEvent, date?: Date) => {
-    if (date) setClockIn(date);
-  };
-  const onChangeLunchOut = (_: DateTimePickerEvent, date?: Date) => {
-    if (date) setLunchOut(date);
-  };
-  const onChangeLunchIn = (_: DateTimePickerEvent, date?: Date) => {
-    if (date) setLunchIn(date);
-  };
+  function openPicker(slot: TimeSlot) {
+    setPickerValue(times[slot] ?? new Date());
+    setActiveSlot(slot);
+  }
+
+  function confirmPicker() {
+    if (!activeSlot) return;
+    setTimes((prev) => ({ ...prev, [activeSlot]: pickerValue }));
+    setActiveSlot(null);
+  }
+
+  function onPickerChange(_: DateTimePickerEvent, date?: Date) {
+    if (date) setPickerValue(date);
+  }
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
+
       <Text style={styles.sofiLogo}>SoFi</Text>
-      <Text style={styles.title}>Clock Out Calculator</Text>
+      <Text style={styles.title}>Clock Out</Text>
 
       <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={styles.label}>Clock In</Text>
-          <DateTimePicker
-            value={clockIn}
-            mode="time"
-            display="spinner"
-            minuteInterval={1}
-            onChange={onChangeClockIn}
-            style={styles.picker}
-            textColor="#fff"
-            themeVariant="dark"
-          />
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Lunch Out</Text>
-          <DateTimePicker
-            value={lunchOut}
-            mode="time"
-            display="spinner"
-            minuteInterval={1}
-            onChange={onChangeLunchOut}
-            style={styles.picker}
-            textColor="#fff"
-            themeVariant="dark"
-          />
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.row}>
-          <Text style={styles.label}>Lunch In</Text>
-          <DateTimePicker
-            value={lunchIn}
-            mode="time"
-            display="spinner"
-            minuteInterval={1}
-            onChange={onChangeLunchIn}
-            style={styles.picker}
-            textColor="#fff"
-            themeVariant="dark"
-          />
-        </View>
+        <View style={styles.cardShadow} />
+        {(["clockIn", "lunchOut", "lunchIn"] as TimeSlot[]).map(
+          (slot, index) => (
+            <View key={slot}>
+              {index > 0 && <View style={styles.divider} />}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.row,
+                  pressed && styles.rowPressed,
+                ]}
+                onPress={() => openPicker(slot)}
+              >
+                <Text style={styles.label}>{LABELS[slot]}</Text>
+                <Text
+                  style={[
+                    styles.timeValue,
+                    !times[slot] && styles.timeValueUnset,
+                  ]}
+                >
+                  {times[slot] ? fmt(times[slot]!) : "--:--"}
+                </Text>
+              </Pressable>
+            </View>
+          )
+        )}
       </View>
 
       <View style={styles.resultCard}>
-        {lunchMinutes < 0 ? (
-          <Text style={styles.errorText}>
-            Lunch In must be after Lunch Out
+        <View style={styles.resultShadow} />
+        <Text style={styles.resultLabel}>Clock Out At</Text>
+        <Text style={styles.resultTime}>
+          {hasError
+            ? "Error"
+            : clockOut
+              ? fmt(clockOut)
+              : "--:-- --"}
+        </Text>
+        {hasError ? (
+          <Text style={styles.errorText}>Lunch In must be after Lunch Out</Text>
+        ) : clockOut && lunchMinutes !== null ? (
+          <Text style={styles.subtitle}>
+            {lunchMinutes} min lunch · 8 hrs work
           </Text>
-        ) : clockOut ? (
-          <>
-            <Text style={styles.resultLabel}>Clock Out At</Text>
-            <Text style={styles.resultTime}>{fmt(clockOut)}</Text>
-            <Text style={styles.subtitle}>
-              {lunchMinutes} min lunch · 8 hrs work
-            </Text>
-          </>
-        ) : null}
+        ) : (
+          <Text style={styles.subtitle}>Set all times above</Text>
+        )}
       </View>
 
       <View style={styles.notifStatus}>
         <View
           style={[
             styles.dot,
-            { backgroundColor: notificationsSet ? "#00C853" : "#5A6475" },
+            {
+              backgroundColor: notificationsSet ? "#00C853" : SOFI.textDim,
+            },
           ]}
         />
         <Text style={styles.notifText}>
@@ -221,6 +236,48 @@ export default function App() {
               : "Enable notifications in Settings"}
         </Text>
       </View>
+
+      <Modal
+        visible={activeSlot !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveSlot(null)}
+      >
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setActiveSlot(null)}
+        >
+          <Pressable style={styles.modal} onPress={() => {}}>
+            <View style={styles.modalShadow} />
+            <Text style={styles.modalTitle}>
+              {activeSlot ? LABELS[activeSlot] : ""}
+            </Text>
+
+            <View style={styles.pickerWrapper}>
+              <DateTimePicker
+                value={pickerValue}
+                mode="time"
+                display="spinner"
+                minuteInterval={1}
+                onChange={onPickerChange}
+                style={styles.picker}
+                textColor={SOFI.white}
+                themeVariant="dark"
+              />
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.confirmBtn,
+                pressed && styles.confirmBtnPressed,
+              ]}
+              onPress={confirmPicker}
+            >
+              <Text style={styles.confirmBtnText}>Confirm</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -228,91 +285,126 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0B1121",
+    backgroundColor: SOFI.bg,
     paddingTop: 80,
     paddingHorizontal: 20,
   },
   sofiLogo: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#E5004C",
+    color: SOFI.blue,
     textAlign: "center",
     letterSpacing: 2,
     marginBottom: 4,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "300",
-    color: "#FFFFFF",
+    color: SOFI.white,
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 32,
     letterSpacing: 0.5,
   },
+
   card: {
-    backgroundColor: "#151E30",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#1E2A40",
+    backgroundColor: SOFI.card,
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: SOFI.cardBorder,
+    position: "relative",
+  },
+  cardShadow: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: SOFI.shadow,
+    borderRadius: 24,
+    zIndex: -1,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  rowPressed: {
+    backgroundColor: "rgba(0,162,199,0.08)",
   },
   label: {
-    fontSize: 15,
-    color: "#8B95A5",
-    fontWeight: "500",
-    width: 90,
+    fontSize: 16,
+    color: SOFI.textMuted,
+    fontWeight: "600",
     letterSpacing: 0.3,
   },
-  picker: {
-    flex: 1,
-    height: 120,
+  timeValue: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: SOFI.white,
+    letterSpacing: 0.5,
+  },
+  timeValueUnset: {
+    color: SOFI.textDim,
   },
   divider: {
     height: 1,
-    backgroundColor: "#1E2A40",
-    marginVertical: 4,
+    backgroundColor: SOFI.cardBorder,
+    marginHorizontal: 8,
   },
+
   resultCard: {
-    backgroundColor: "#151E30",
-    borderRadius: 12,
-    padding: 24,
-    marginTop: 24,
+    backgroundColor: SOFI.card,
+    borderRadius: 24,
+    padding: 28,
+    marginTop: 28,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5004C",
+    borderWidth: 2,
+    borderColor: SOFI.blue,
+    position: "relative",
+  },
+  resultShadow: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: SOFI.shadow,
+    borderRadius: 24,
+    zIndex: -1,
   },
   resultLabel: {
     fontSize: 13,
-    color: "#8B95A5",
+    color: SOFI.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1.5,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   resultTime: {
     fontSize: 48,
     fontWeight: "700",
-    color: "#E5004C",
+    color: SOFI.blue,
     marginVertical: 8,
+    letterSpacing: -1,
   },
   subtitle: {
     fontSize: 13,
-    color: "#8B95A5",
+    color: SOFI.textMuted,
     letterSpacing: 0.3,
   },
   errorText: {
-    fontSize: 16,
-    color: "#E5004C",
+    fontSize: 13,
+    color: SOFI.magenta,
   },
+
   notifStatus: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 24,
   },
   dot: {
     width: 8,
@@ -322,6 +414,70 @@ const styles = StyleSheet.create({
   },
   notifText: {
     fontSize: 13,
-    color: "#5A6475",
+    color: SOFI.textDim,
+  },
+
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modal: {
+    backgroundColor: SOFI.card,
+    borderRadius: 24,
+    padding: 28,
+    width: "85%",
+    borderWidth: 2,
+    borderColor: SOFI.blue,
+    alignItems: "center",
+    position: "relative",
+  },
+  modalShadow: {
+    position: "absolute",
+    top: 5,
+    left: 5,
+    right: -5,
+    bottom: -5,
+    backgroundColor: SOFI.shadow,
+    borderRadius: 24,
+    zIndex: -1,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: SOFI.white,
+    marginBottom: 16,
+  },
+  pickerWrapper: {
+    width: "100%",
+    height: 180,
+    overflow: "hidden",
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  picker: {
+    width: "100%",
+    height: 180,
+  },
+  confirmBtn: {
+    backgroundColor: SOFI.blue,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderWidth: 2,
+    borderColor: SOFI.blue,
+    minWidth: 180,
+    alignItems: "center",
+  },
+  confirmBtnPressed: {
+    backgroundColor: "#008BA8",
+    transform: [{ translateY: 2 }],
+  },
+  confirmBtnText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: SOFI.white,
+    letterSpacing: 0.3,
   },
 });

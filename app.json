@@ -8,9 +8,12 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.jonathantchiu.clock",
+      "bundleIdentifier": "timekeep",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -28,7 +31,13 @@
         {
           "sounds": []
         }
-      ]
-    ]
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9ec7c2c6-f9be-46d4-b940-4cfe91f3e88c"
+      }
+    }
   }
 }

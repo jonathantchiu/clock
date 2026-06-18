@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.0.0"
+    "version": ">= 3.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -23,8 +24,8 @@
     "production": {
       "ios": {
         "appleId": "jonathan.tc.chiu@gmail.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "ascAppId": "6781150880",
+        "appleTeamId": "Q66QCPYGDW"
       }
     }
   }
